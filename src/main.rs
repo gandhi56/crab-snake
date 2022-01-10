@@ -50,7 +50,7 @@ pub struct Battlesnake {
     squad: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Debug)]
 pub struct Coord {
     x: u32,
     y: u32,

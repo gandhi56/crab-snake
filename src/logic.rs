@@ -40,11 +40,29 @@ pub fn hit_wall(pos: &Coord, width: u32, height: u32) -> bool{
     pos.x >= width || pos.y >= height
 }
 
-pub fn get_move(
-    game: &Game,
-    _turn: &u32,
-    _board: &Board,
-    you: &Battlesnake) -> &'static str {
+pub fn suicide(pos: &Coord, snake: &Battlesnake) -> bool {
+    snake.body.contains(&pos)
+}
+
+pub fn attacks_opponent(pos: &Coord, mysnake: &Battlesnake, board: &Board) -> bool {
+    for snake in board.snakes.iter() {
+        if snake.id == mysnake.id{
+            continue;
+        }
+        if snake.body.contains(&pos){
+            return true;
+        }
+    }
+    false
+}
+
+pub fn filter_trivially_bad_moves<'a>(board: &Board,  you: &Battlesnake) -> HashMap<&'a str, bool>{
+    
+    // initialize board dimensions
+    let board_width = board.width;
+    let board_height = board.height;
+    
+    // initialize possible moves
     let mut possible_moves: HashMap<&str, bool> = vec![
         ("up", true),
         ("down", true),
@@ -54,7 +72,7 @@ pub fn get_move(
     .into_iter()
     .collect();
 
-    // Step 0: Don't let your Battlesnake move back in on its own neck
+    // Do not let your Battlesnake move back in on its own neck
     let my_head = &you.head;
     let my_neck = &you.body[1];
     if my_neck.x < my_head.x {
@@ -71,16 +89,16 @@ pub fn get_move(
         possible_moves.insert("up", false);
     }
 
-    // TODO: Step 1 - Don't hit walls.
-    // Use board information to prevent your Battlesnake from moving beyond the boundaries of the board.
-    let board_width = _board.width;
-    let board_height = _board.height;
-
     let mut bad_moves: Vec<&str> = vec![];
     for (mov, _ok) in possible_moves.iter_mut(){
         let new_pos = next_pos(&you.head, mov);
-        if hit_wall(&new_pos, board_width, board_height){
+        
+        if  hit_wall(&new_pos, board_width, board_height) || 
+            suicide(&new_pos, you) || 
+            attacks_opponent(&new_pos, you, board){
+            
             bad_moves.push(mov);
+            continue;
         }
     }
 
@@ -88,13 +106,14 @@ pub fn get_move(
         possible_moves.insert(mov, false);
     }
 
-    // TODO: Step 2 - Don't hit yourself.
-    // Use body information to prevent your Battlesnake from colliding with itself.
-    // body = move_req.body
+    possible_moves
+}
 
-    // TODO: Step 3 - Don't collide with others.
-    // Use snake vector to prevent your Battlesnake from colliding with others.
-    // snakes = move_req.board.snakes
+pub fn get_move(
+    game: &Game,
+    _turn: &u32,
+    board: &Board,
+    you: &Battlesnake) -> &'static str {
 
     // TODO: Step 4 - Find food.
     // Use board information to seek out and find food.
@@ -102,7 +121,8 @@ pub fn get_move(
 
     // Finally, choose a move from the available safe moves.
     // TODO: Step 5 - Select a move to make based on strategy, rather than random.
-    let moves = possible_moves
+
+    let moves = filter_trivially_bad_moves(board, you)
         .into_iter()
         .filter(|&(_, v)| v == true)
         .map(|(k, _)| k)
