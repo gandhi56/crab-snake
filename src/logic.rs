@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use log::info;
 
-use crate::{Battlesnake, Board, Game};
+use crate::{Battlesnake, Board, Game, Coord};
 
 pub fn get_info() -> JsonValue {
     info!("INFO");
@@ -12,10 +12,10 @@ pub fn get_info() -> JsonValue {
     // Personalize the look of your snake per https://docs.battlesnake.com/references/personalization
     return json!({
         "apiversion": "1",
-        "author": "",
-        "color": "#888888",
-        "head": "default",
-        "tail": "default",
+        "author": "gandhi56",
+        "color": "#3c0c59",
+        "head": "evil",
+        "tail": "small-rattle",
     });
 }
 
@@ -27,8 +27,21 @@ pub fn end(game: &Game, _turn: &u32, _board: &Board, _you: &Battlesnake) {
     info!("{} END", game.id);
 }
 
-pub fn get_move(game: &Game, _turn: &u32, _board: &Board, you: &Battlesnake) -> &'static str {
-    let mut possible_moves: HashMap<_, _> = vec![
+pub fn next_pos(pos: &Coord, mov: &str) -> Coord {
+    match mov{
+        "up" => Coord{x: pos.x, y: pos.y+1},
+        "down" => Coord{x: pos.x, y: pos.y-1},
+        "right" => Coord{x: pos.x+1, y: pos.y},
+        _ => Coord{x: pos.x-1, y: pos.y},
+    }
+}
+
+pub fn get_move(
+    game: &Game,
+    _turn: &u32,
+    _board: &Board,
+    you: &Battlesnake) -> &'static str {
+    let mut possible_moves: HashMap<&str, bool> = vec![
         ("up", true),
         ("down", true),
         ("left", true),
@@ -56,8 +69,13 @@ pub fn get_move(game: &Game, _turn: &u32, _board: &Board, you: &Battlesnake) -> 
 
     // TODO: Step 1 - Don't hit walls.
     // Use board information to prevent your Battlesnake from moving beyond the boundaries of the board.
-    // board_width = move_req.board.width
-    // board_height = move_req.board.height
+    let board_width = _board.width;
+    let board_height = _board.height;
+
+    for (mov, _) in possible_moves.into_iter(){
+        let new_pos = next_pos(&you.head, mov);
+
+    }
 
     // TODO: Step 2 - Don't hit yourself.
     // Use body information to prevent your Battlesnake from colliding with itself.
