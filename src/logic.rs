@@ -102,10 +102,15 @@ pub fn filter_trivially_bad_moves<'a>(board: &Board,  you: &Battlesnake) -> Hash
         }
     }
 
-    for mov in bad_moves{
-        possible_moves.insert(mov, false);
-    }
 
+    // If no possible move is available, then all moves
+    // should be allowed. Otherwise, do not allow the
+    // bad moves.
+    if bad_moves.len() < 4{
+        for mov in bad_moves{
+            possible_moves.insert(mov, false);
+        }
+    }
     possible_moves
 }
 
