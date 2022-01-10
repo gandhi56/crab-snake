@@ -27,6 +27,35 @@ pub fn end(game: &Game, _turn: &u32, _board: &Board, _you: &Battlesnake) {
     info!("{} END", game.id);
 }
 
+// ==================================================================
+
+pub struct SearchState{
+    board: Board,
+    mysnake_id: String,
+}
+
+impl SearchState{
+    fn new(board: Board, id: String) -> SearchState{
+        SearchState{board: board, mysnake_id: id}
+    }
+
+    // TODO
+    fn update(&self, mov: &str) /*SearchState*/{
+        //let mut new_state = SearchState::new(self.board, self.mysnake_id);
+        //let new_head_pos = next_pos();
+    }
+
+    // TODO
+    fn get_snake_body(&self, id: String) -> Vec<Coord>{
+        for snake in &self.board.snakes{
+            if snake.id == id{
+                return snake.body;
+            }
+        }
+        return vec![];
+    }
+}
+
 pub fn next_pos(pos: &Coord, mov: &str) -> Coord {
     match mov{
         "up" => Coord{x: pos.x, y: pos.y+1},
@@ -34,14 +63,6 @@ pub fn next_pos(pos: &Coord, mov: &str) -> Coord {
         "right" => Coord{x: pos.x+1, y: pos.y},
         _ => Coord{x: pos.x-1, y: pos.y},
     }
-}
-
-pub fn hit_wall(pos: &Coord, width: u32, height: u32) -> bool{
-    pos.x >= width || pos.y >= height
-}
-
-pub fn suicide(pos: &Coord, snake: &Battlesnake) -> bool {
-    snake.body.contains(&pos)
 }
 
 pub fn attacks_opponent(pos: &Coord, mysnake: &Battlesnake, board: &Board) -> bool {
@@ -57,10 +78,6 @@ pub fn attacks_opponent(pos: &Coord, mysnake: &Battlesnake, board: &Board) -> bo
 }
 
 pub fn filter_trivially_bad_moves<'a>(board: &Board,  you: &Battlesnake) -> HashMap<&'a str, bool>{
-    
-    // initialize board dimensions
-    let board_width = board.width;
-    let board_height = board.height;
     
     // initialize possible moves
     let mut possible_moves: HashMap<&str, bool> = vec![
@@ -93,10 +110,9 @@ pub fn filter_trivially_bad_moves<'a>(board: &Board,  you: &Battlesnake) -> Hash
     for (mov, _ok) in possible_moves.iter_mut(){
         let new_pos = next_pos(&you.head, mov);
         
-        if  hit_wall(&new_pos, board_width, board_height) || 
-            suicide(&new_pos, you) || 
+        if  new_pos.x >= board.width || new_pos.y >= board.height || 
+            you.body.contains(&new_pos) ||
             attacks_opponent(&new_pos, you, board){
-            
             bad_moves.push(mov);
             continue;
         }
