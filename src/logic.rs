@@ -49,7 +49,7 @@ pub fn attacks_opponent(pos: &Coord, mysnake: &Battlesnake, board: &Board) -> bo
         if snake.id == mysnake.id{
             continue;
         }
-        if snake.body.contains(&pos){
+        if snake.body.contains(&pos) && snake.length >= mysnake.length {
             return true;
         }
     }
