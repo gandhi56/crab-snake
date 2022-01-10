@@ -36,6 +36,10 @@ pub fn next_pos(pos: &Coord, mov: &str) -> Coord {
     }
 }
 
+pub fn hit_wall(pos: &Coord, width: u32, height: u32) -> bool{
+    pos.x >= width || pos.y >= height
+}
+
 pub fn get_move(
     game: &Game,
     _turn: &u32,
@@ -72,9 +76,16 @@ pub fn get_move(
     let board_width = _board.width;
     let board_height = _board.height;
 
-    for (mov, _) in possible_moves.into_iter(){
+    let mut bad_moves: Vec<&str> = vec![];
+    for (mov, _ok) in possible_moves.iter_mut(){
         let new_pos = next_pos(&you.head, mov);
+        if hit_wall(&new_pos, board_width, board_height){
+            bad_moves.push(mov);
+        }
+    }
 
+    for mov in bad_moves{
+        possible_moves.insert(mov, false);
     }
 
     // TODO: Step 2 - Don't hit yourself.
