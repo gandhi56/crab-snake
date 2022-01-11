@@ -39,29 +39,43 @@ impl SearchState{
         SearchState{board: board, mysnake_id: id}
     }
 
-    // TODO
-    fn update(&self, mov: &str) /*SearchState*/{
-        //let mut new_state = SearchState::new(self.board, self.mysnake_id);
-        //let new_head_pos = next_pos();
+    fn update(&self, mov: &str) -> SearchState {
+        let mut new_state = SearchState::new(self.board.clone(), self.mysnake_id.clone());
+        new_state.in_place_update(new_state.mysnake_id.clone(), mov);
+        new_state
     }
 
-    // TODO
     fn get_snake_body(&self, id: String) -> Vec<Coord>{
         for snake in &self.board.snakes{
             if snake.id == id{
-                return snake.body;
+                return snake.body.clone();
             }
         }
         return vec![];
     }
+
+    fn in_place_update(&mut self, id: String, mov: &str) {
+        for s in &mut self.board.snakes{
+            if s.id == id{
+                s.update_body(next_pos(&s.head, mov));
+            }
+        }
+    }
+
+    // TODO
+    fn eval_move(&self, mov: &str) -> i32{
+        0
+    }
+
 }
 
 pub fn next_pos(pos: &Coord, mov: &str) -> Coord {
     match mov{
-        "up" => Coord{x: pos.x, y: pos.y+1},
-        "down" => Coord{x: pos.x, y: pos.y-1},
-        "right" => Coord{x: pos.x+1, y: pos.y},
-        _ => Coord{x: pos.x-1, y: pos.y},
+        "up"    =>      Coord{x: pos.x  , y: pos.y+1},
+        "down"  =>      Coord{x: pos.x  , y: pos.y-1},
+        "right" =>      Coord{x: pos.x+1, y: pos.y  },
+        "left"  =>      Coord{x: pos.x-1, y: pos.y  },
+        _       =>      Coord{x: pos.x  , y: pos.y  },
     }
 }
 
@@ -107,7 +121,7 @@ pub fn filter_trivially_bad_moves<'a>(board: &Board,  you: &Battlesnake) -> Hash
     }
 
     let mut bad_moves: Vec<&str> = vec![];
-    for (mov, _ok) in possible_moves.iter_mut(){
+    for (mov, _) in possible_moves.iter_mut(){
         let new_pos = next_pos(&you.head, mov);
         
         if  new_pos.x >= board.width || new_pos.y >= board.height || 
@@ -117,7 +131,6 @@ pub fn filter_trivially_bad_moves<'a>(board: &Board,  you: &Battlesnake) -> Hash
             continue;
         }
     }
-
 
     // If no possible move is available, then all moves
     // should be allowed. Otherwise, do not allow the

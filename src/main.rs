@@ -26,7 +26,7 @@ pub struct Game {
     timeout: u32,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Board {
     height: u32,
     width: u32,
@@ -46,11 +46,22 @@ pub struct Battlesnake {
     latency: String,
 
     // Used in non-standard game modes
-    shout: Option<String>,
-    squad: Option<String>,
+    // FIXME: Implement copy trait for these fields
+    //shout: Option<String>,
+    //squad: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
+impl Battlesnake{
+    fn update_body(&mut self, pos: Coord){
+        self.head = pos;
+        for i in 1..self.length{
+            self.body[i as usize] = self.body[(i-1) as usize];
+        }
+        self.body[0] = self.head;
+    }
+}
+
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone, Copy)]
 pub struct Coord {
     x: u32,
     y: u32,
