@@ -32,15 +32,27 @@ pub fn end(game: &Game, _turn: &u32, _board: &Board, _you: &Battlesnake) {
 pub struct SearchState{
     board: Board,
     mysnake_id: String,
+    idx: usize,
 }
 
 impl SearchState{
-    fn new(board: Board, id: String) -> SearchState{
-        SearchState{board: board, mysnake_id: id}
+    fn new(board: &Board, id: &str) -> SearchState{
+        let mut state = SearchState{
+            board: board.clone(), 
+            mysnake_id: String::from(id), 
+            idx: 0 as usize
+        }; 
+        
+        for i in 0..board.snakes.len(){
+            if board.snakes[i].id == id{
+                state.idx = i;
+            }
+        }
+        state
     }
 
     fn update(&self, mov: &str) -> SearchState {
-        let mut new_state = SearchState::new(self.board.clone(), self.mysnake_id.clone());
+        let mut new_state = SearchState::new(&self.board, self.mysnake_id.as_str());
         new_state.in_place_update(new_state.mysnake_id.clone(), mov);
         new_state
     }
@@ -62,9 +74,60 @@ impl SearchState{
         }
     }
 
-    // TODO
-    fn eval_move(&self, mov: &str) -> i32{
-        0
+    fn best_move(&self, depth_limit: usize) -> String {
+        let possible_moves: HashMap<&str, bool> = filter_trivially_bad_moves(&self.board, &self.board.snakes[self.idx]);
+        
+        let mut best_move = "up";
+        let mut max_score = -99999;
+        let depth = depth_limit;
+
+        for mov in possible_moves.iter(){
+            let next_state = self.update(mov.0);
+            let score = next_state.dfs(depth-1);
+            if score > max_score{
+                max_score = score;
+                best_move = mov.0;
+            }
+        }
+        
+        String::from(best_move)
+    }
+
+    fn dfs(&self, depth: usize) -> i32{
+        if depth == 0{
+            return self.eval();
+        }
+
+        let possible_moves = filter_trivially_bad_moves(&self.board, &self.board.snakes[self.idx]);
+        let mut max_score = -99999;
+        for mov in possible_moves.iter(){
+            let next_state = self.update(mov.0);
+            let score = next_state.dfs(depth-1);
+            if score > max_score{
+                max_score = score;
+            }
+        }
+        
+        max_score
+    }
+
+    // No state update is allowed in this method.
+    fn eval(&self) -> i32{
+        let mut val = 0;
+
+        // If the snake head intersects with a food item,
+        // return a value of 100. Safe to assume no collision
+        // here as the move would already have been filtered out.
+        for food_coord in &self.board.food{
+            if *food_coord == self.board.snakes[self.idx].head{
+                val = 100;
+                break;
+            }
+        }
+
+        // If the position of the snake's head is with `delta`
+        // distance from the corner, decrement 5 from val.
+        val
     }
 
 }
@@ -147,7 +210,7 @@ pub fn get_move(
     game: &Game,
     _turn: &u32,
     board: &Board,
-    you: &Battlesnake) -> &'static str {
+    you: &Battlesnake) -> String {
 
     // TODO: Step 4 - Find food.
     // Use board information to seek out and find food.
@@ -156,12 +219,17 @@ pub fn get_move(
     // Finally, choose a move from the available safe moves.
     // TODO: Step 5 - Select a move to make based on strategy, rather than random.
 
+    /*
     let moves = filter_trivially_bad_moves(board, you)
         .into_iter()
         .filter(|&(_, v)| v == true)
         .map(|(k, _)| k)
         .collect::<Vec<_>>();
     let chosen = moves.choose(&mut rand::thread_rng()).unwrap();
+    */
+
+    let state = SearchState::new(board, you.id.as_str());
+    let chosen = state.best_move(4);
 
     info!("{} MOVE {}", game.id, chosen);
 
